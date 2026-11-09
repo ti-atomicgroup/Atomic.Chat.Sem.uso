@@ -40,10 +40,12 @@ atomic/
 ├── docs/
 │   ├── FORK.md                  regras do fork e como atualizar o Rocket.Chat
 │   ├── HOSTINGER.md             passo a passo da VPS
+│   ├── LOCAL.md                 rodar o chat no seu computador (Docker Desktop)
 │   └── ROADMAP.md               fases do projeto
 ├── branding/                    logo, cores, CSS e textos da Atomic
 ├── deploy/
 │   ├── docker-compose.yml       Caddy + Rocket.Chat + MongoDB + Hermes
+│   ├── docker-compose.local.yml ajustes para rodar local (localhost:3000, sem HTTPS)
 │   ├── Caddyfile
 │   ├── .env.example             variáveis do servidor
 │   ├── .env.hermes.example      segredos do Hermes (API do modelo, token do bot, Nekt)
@@ -54,6 +56,16 @@ atomic/
     ├── plugins/rocketchat/      conector Hermes ↔ Rocket.Chat (Python)
     └── tests/                   testes do conector com Rocket.Chat simulado
 ```
+
+## Rodar localmente
+
+Com Docker Desktop: veja [docs/LOCAL.md](docs/LOCAL.md). Em resumo, dentro de `atomic/deploy`:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
+```
+
+O chat abre em http://localhost:3000.
 
 ## Como contribuir
 

@@ -1,0 +1,17 @@
+# Ambiente local (Windows/macOS/Linux com Docker Desktop): sem domínio, sem HTTPS.
+# Usado junto com o docker-compose.yml:
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
+# Chat em http://localhost:3000. O Hermes só sobe com --profile bot.
+
+services:
+  rocketchat:
+    ports:
+      - "3000:3000"
+    environment:
+      ROOT_URL: http://localhost:3000
+
+  caddy:
+    profiles: ["producao"]
+
+  hermes:
+    profiles: ["bot"]

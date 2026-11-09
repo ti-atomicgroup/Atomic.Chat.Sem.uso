@@ -1,0 +1,14 @@
+# Arquivos que rodam dentro de containers Linux ou na VPS precisam de LF,
+# mesmo quando o repositório é clonado no Windows (core.autocrlf=true).
+*.sh        text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.py        text eol=lf
+*.css       text eol=lf
+*.html      text eol=lf
+*.md        text eol=lf
+Caddyfile   text eol=lf
+.env*       text eol=lf
+*.png       binary
+*.jpg       binary
+*.ico       binary
