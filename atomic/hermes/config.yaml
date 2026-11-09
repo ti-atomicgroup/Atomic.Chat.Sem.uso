@@ -1,0 +1,30 @@
+# Modelo de ~/.hermes/config.yaml para o Atomic Chat.
+# O bootstrap copia este arquivo para deploy/data/hermes/config.yaml na primeira subida;
+# depois disso o Hermes passa a ser o dono do arquivo (o `hermes setup` pode reescrevê-lo).
+
+timezone: "America/Sao_Paulo"
+
+model:
+  provider: anthropic
+  default: claude-sonnet-5-5
+
+plugins:
+  enabled:
+    - rocketchat
+
+gateway:
+  platforms:
+    rocketchat:
+      enabled: true
+      extra:
+        reply_mode: thread
+        require_mention: true
+        # Salas onde o bot responde sem @hermes (IDs das salas):
+        free_response_channels: []
+
+mcp_servers:
+  # Dados da Nekt (BigQuery + camada semântica) disponíveis como ferramentas para o agente.
+  nekt:
+    url: "${NEKT_MCP_URL}"
+    headers:
+      Authorization: "Bearer ${NEKT_MCP_TOKEN}"

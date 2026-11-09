@@ -1,0 +1,45 @@
+name: rocketchat
+label: Rocket.Chat
+kind: platform
+version: 0.1.0
+description: >
+  Adapter do gateway Hermes para o Atomic Chat (fork do Rocket.Chat).
+  Recebe mensagens pelo WebSocket DDP (stream-room-messages) e responde pela
+  REST API v1. Suporta DMs, canais com @menção, threads, anexos e entrega de
+  alertas/cron na sala "home".
+author: Atomic Group
+requires_env:
+  - name: ROCKETCHAT_URL
+    description: "URL do servidor (ex.: https://chat.atomicgroup.com.br)"
+    prompt: "URL do Rocket.Chat"
+    password: false
+  - name: ROCKETCHAT_USER_ID
+    description: "ID do usuário-bot (mostrado ao gerar o Personal Access Token)"
+    prompt: "User ID do bot"
+    password: false
+  - name: ROCKETCHAT_TOKEN
+    description: "Personal Access Token do usuário-bot"
+    prompt: "Token do bot"
+    password: true
+optional_env:
+  - name: ROCKETCHAT_ALLOWED_USERS
+    description: "IDs de usuários autorizados (vírgula)"
+    password: false
+  - name: ROCKETCHAT_ALLOW_ALL_USERS
+    description: "true = qualquer usuário logado no chat pode usar o bot"
+    password: false
+  - name: ROCKETCHAT_HOME_CHANNEL
+    description: "ID da sala para alertas e resultados de cron"
+    password: false
+  - name: ROCKETCHAT_REPLY_MODE
+    description: "thread (padrão) ou off"
+    password: false
+  - name: ROCKETCHAT_REQUIRE_MENTION
+    description: "Exigir @bot em canais (padrão true)"
+    password: false
+  - name: ROCKETCHAT_FREE_RESPONSE_CHANNELS
+    description: "IDs de salas onde o bot responde sem @menção"
+    password: false
+  - name: ROCKETCHAT_ALLOWED_CHANNELS
+    description: "Se definido, o bot só atua nestas salas"
+    password: false

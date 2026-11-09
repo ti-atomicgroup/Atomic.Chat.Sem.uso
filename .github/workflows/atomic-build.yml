@@ -1,0 +1,89 @@
+# Gera a imagem Docker do Atomic Chat (fork do Rocket.Chat) e publica no GitHub Container Registry.
+# Dispara manualmente ou ao criar uma tag "atomic-v*" (ex.: atomic-v8.9.1-1).
+name: Atomic — build da imagem
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["atomic-v*"]
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: atomic-build-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/atomic-chat
+
+jobs:
+  build:
+    # O build do Meteor precisa de bastante RAM; o swap abaixo cobre runners de 7-8 GB.
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Swap de 8 GB
+        run: |
+          sudo fallocate -l 8G /swapfile2 && sudo chmod 600 /swapfile2
+          sudo mkswap /swapfile2 && sudo swapon /swapfile2 && free -h
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.15.0"
+
+      - name: Yarn (corepack)
+        run: corepack enable && yarn --version
+
+      - name: Cache do Meteor
+        uses: actions/cache@v4
+        with:
+          path: ~/.meteor
+          key: meteor-${{ hashFiles('apps/meteor/.meteor/release') }}
+
+      - name: Instalar Meteor
+        run: |
+          command -v meteor >/dev/null || curl -sL https://install.meteor.com | sed s/--progress-bar/-sL/g | /bin/sh
+          echo "$HOME/.meteor" >> "$GITHUB_PATH"
+
+      - name: Dependências
+        run: yarn install --immutable
+
+      - name: Build dos pacotes do monorepo
+        run: yarn build
+
+      - name: Build do bundle Meteor
+        working-directory: apps/meteor
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
+        run: yarn build:ci
+
+      - name: Tag da imagem
+        id: meta
+        run: |
+          RC_VERSION=$(jq -r .version apps/meteor/package.json)
+          if [[ "$GITHUB_REF" == refs/tags/atomic-v* ]]; then TAG="${GITHUB_REF#refs/tags/atomic-v}"; else TAG="${RC_VERSION}-atomic.${GITHUB_RUN_NUMBER}"; fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build e push
+        uses: docker/build-push-action@v6
+        with:
+          context: /tmp/dist
+          file: apps/meteor/.docker/Dockerfile.alpine
+          target: release-standard
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+            ${{ env.IMAGE }}:latest

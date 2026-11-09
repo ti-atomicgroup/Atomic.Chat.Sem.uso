@@ -1,0 +1,89 @@
+# Atomic Chat — stack de produção para VPS Hostinger
+#   Caddy (HTTPS automático) → Rocket.Chat (fork Atomic) → MongoDB 8.2 (replica set)
+#   Hermes Agent (IA) conectado ao Rocket.Chat pelo plugin atomic/hermes/plugins/rocketchat
+#
+# Uso:  cp .env.example .env && editar  →  docker compose up -d
+name: atomic-chat
+
+services:
+  mongodb:
+    image: mongo:8.2
+    restart: unless-stopped
+    command: ["--replSet", "rs0", "--bind_ip_all", "--wiredTigerCacheSizeGB", "${MONGO_CACHE_GB:-1}"]
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      # Inicializa o replica set na primeira subida (Rocket.Chat exige oplog).
+      test: >
+        mongosh --quiet --eval "try { rs.status().ok } catch (e) {
+          rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'mongodb:27017'}]}).ok }"
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 20s
+
+  rocketchat:
+    image: ${RC_IMAGE:-ghcr.io/atomicgroup/atomic-chat}:${RC_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      ROOT_URL: https://${CHAT_DOMAIN}
+      PORT: 3000
+      DEPLOY_METHOD: docker
+      MONGO_URL: mongodb://mongodb:27017/rocketchat?replicaSet=rs0
+      # Configurações fixadas por env (não podem ser alteradas pelo painel admin):
+      OVERWRITE_SETTING_Site_Name: ${SITE_NAME:-Atomic Chat}
+      OVERWRITE_SETTING_Language: pt-BR
+      OVERWRITE_SETTING_Show_Setup_Wizard: completed
+      OVERWRITE_SETTING_Accounts_RegistrationForm: Disabled
+      OVERWRITE_SETTING_API_Enable_Personal_Access_Tokens: "true"
+      ADMIN_USERNAME: ${RC_ADMIN_USERNAME}
+      ADMIN_EMAIL: ${RC_ADMIN_EMAIL}
+      ADMIN_PASS: ${RC_ADMIN_PASS}
+      TZ: America/Sao_Paulo
+    volumes:
+      - rc_uploads:/app/uploads
+    expose:
+      - "3000"
+
+  hermes:
+    image: ${HERMES_IMAGE:-nousresearch/hermes-agent}:${HERMES_TAG:-latest}
+    restart: unless-stopped
+    command: ["gateway", "run"]
+    depends_on:
+      - rocketchat
+    env_file: .env.hermes
+    environment:
+      HERMES_UID: 10000
+      HERMES_GID: 10000
+      # Rede interna do compose: o bot fala com o Rocket.Chat sem sair da VPS.
+      ROCKETCHAT_URL: http://rocketchat:3000
+      TZ: America/Sao_Paulo
+    volumes:
+      - ./data/hermes:/opt/data
+      - ../hermes/plugins/rocketchat:/opt/data/plugins/rocketchat:ro
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      CHAT_DOMAIN: ${CHAT_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - rocketchat
+
+volumes:
+  mongodb_data:
+  rc_uploads:
+  caddy_data:
+  caddy_config:
