@@ -9,7 +9,8 @@
 
 - `atomic/main`: branch principal da Atomic. Fica em cima de uma **tag de release** do Rocket.Chat
   (hoje `8.9.1`), nunca em cima do `develop` deles.
-- Features: `atomic/feat/<nome>` → PR para `atomic/main`.
+- Mudanças: sempre em branch própria (`atomic/feat/<nome>`, `atomic/fix/<nome>`), testadas,
+  e só então PR para `atomic/main`. O fluxo completo está em [../CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Onde mexer (para não sofrer nas atualizações)
 

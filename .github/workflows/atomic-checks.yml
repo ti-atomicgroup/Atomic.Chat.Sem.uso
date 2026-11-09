@@ -1,0 +1,74 @@
+# Testes obrigatórios de todo PR para atomic/main.
+# Cobre só a camada da Atomic (atomic/ e workflows atomic-*); o build completo do Rocket.Chat
+# fica no workflow "Atomic — build da imagem".
+name: Atomic — testes
+
+on:
+  pull_request:
+    branches: ["atomic/main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: atomic-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Commit do Hermes Agent contra o qual o conector foi validado. Atualize junto com o HERMES_TAG do deploy.
+  HERMES_REF: 8a5a7ace84ca34e655a73f328701e1e9e1eb555c
+
+jobs:
+  conector-hermes:
+    name: Conector Hermes ↔ Rocket.Chat
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Baixar Hermes Agent
+        run: |
+          git init -q /tmp/hermes-agent && cd /tmp/hermes-agent
+          git remote add origin https://github.com/NousResearch/hermes-agent
+          git fetch -q --depth 1 origin "$HERMES_REF" && git checkout -q FETCH_HEAD
+
+      - name: Dependências
+        run: pip install -q -e /tmp/hermes-agent ruamel.yaml aiohttp pytest
+
+      - name: Testes
+        working-directory: atomic/hermes
+        env:
+          HERMES_HOME: /tmp/hermes-home
+        run: PYTHONPATH="$PWD/plugins:/tmp/hermes-agent" python -m pytest tests -v -p no:asyncio -c /dev/null --rootdir .
+
+  deploy:
+    name: Deploy e scripts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ShellCheck
+        run: shellcheck atomic/deploy/scripts/*.sh $(ls atomic/branding/*.sh 2>/dev/null)
+
+      - name: docker compose config
+        working-directory: atomic/deploy
+        run: |
+          cp .env.example .env && cp .env.hermes.example .env.hermes
+          docker compose config -q
+
+      - name: YAML válido
+        run: |
+          python3 - <<'EOF'
+          import pathlib, yaml
+          files = [*pathlib.Path("atomic").rglob("*.yml"), *pathlib.Path("atomic").rglob("*.yaml"),
+                   *pathlib.Path(".github/workflows").glob("atomic-*.yml")]
+          for f in files:
+              yaml.safe_load(f.read_text())
+              print("ok", f)
+          EOF
