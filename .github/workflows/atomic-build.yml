@@ -50,7 +50,11 @@ jobs:
           echo "$HOME/.meteor" >> "$GITHUB_PATH"
 
       - name: Dependências
-        run: yarn install --immutable
+        # A imagem é Alpine (musl), mas o build roda no Ubuntu (glibc): sem isto o yarn só baixa os
+        # binários nativos glibc (sharp, swc, esbuild) e o Rocket.Chat quebra ao iniciar no container.
+        run: |
+          yarn config set supportedArchitectures --json '{"os": ["linux"], "cpu": ["x64"], "libc": ["glibc", "musl"]}'
+          yarn install --immutable
 
       - name: Build dos pacotes do monorepo
         run: yarn build
@@ -60,6 +64,14 @@ jobs:
         env:
           NODE_OPTIONS: --max-old-space-size=8192
         run: yarn build:ci
+
+      - name: Manter só os binários nativos da imagem (linux musl x64)
+        run: |
+          NM=/tmp/dist/bundle/programs/server/npm/node_modules
+          ls -d "$NM"/@img/sharp-*linuxmusl-x64 >/dev/null
+          find "$NM/@img" -maxdepth 1 -type d -name 'sharp-*' -not -name '*-linuxmusl-x64' -exec rm -rf {} +
+          find "$NM/@napi-rs" -maxdepth 1 -type d -name 'pinyin-linux-*' -not -name '*-linux-x64-*' -exec rm -rf {} + 2>/dev/null || true
+          ls "$NM/@img"
 
       - name: Tag da imagem
         id: meta
@@ -138,4 +150,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Promover para latest
+        # Branches de teste geram imagem versionada, mas só a atomic/main (ou tag de release) vira latest.
+        if: github.ref == 'refs/heads/atomic/main' || startsWith(github.ref, 'refs/tags/atomic-v')
         run: docker buildx imagetools create -t "$IMAGE:latest" "$IMAGE:$TAG"
