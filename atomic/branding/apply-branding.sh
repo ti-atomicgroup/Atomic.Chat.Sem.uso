@@ -21,7 +21,7 @@ set_asset() {
 	printf "asset %-18s ← %s" "$name" "$(basename "$file")"
 	local resp
 	resp=$(curl -sS "${AUTH[@]}" -F "asset=@$file" -F "assetName=$name" "$RC_URL/api/v1/assets.setAsset" || true)
-	ok <<<"$resp" && echo "  ok" || true
+	if ok <<<"$resp"; then echo "  ok"; fi
 }
 
 set_setting() {
@@ -30,7 +30,7 @@ set_setting() {
 	local resp
 	resp=$(curl -sS "${AUTH[@]}" -H 'Content-Type: application/json' \
 		-d "{\"value\": $json_value}" "$RC_URL/api/v1/settings/$id" || true)
-	ok <<<"$resp" && echo "  ok" || true
+	if ok <<<"$resp"; then echo "  ok"; fi
 }
 
 A="$DIR/assets"
