@@ -23,7 +23,7 @@ services:
       start_period: 20s
 
   rocketchat:
-    image: ${RC_IMAGE:-ghcr.io/atomicgroup/atomic-chat}:${RC_TAG:-latest}
+    image: ${RC_IMAGE:-ghcr.io/ti-atomicgroup/atomic-chat}:${RC_TAG:-latest}
     restart: unless-stopped
     depends_on:
       mongodb:
