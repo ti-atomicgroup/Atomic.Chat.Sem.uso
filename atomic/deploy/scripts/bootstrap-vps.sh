@@ -7,7 +7,7 @@ DEPLOY_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 echo "==> Pacotes básicos e atualizações de segurança automáticas"
 apt-get update -y
-apt-get install -y ca-certificates curl git ufw unattended-upgrades
+apt-get install -y ca-certificates curl git jq ufw unattended-upgrades
 dpkg-reconfigure -f noninteractive unattended-upgrades
 
 if ! command -v docker >/dev/null; then

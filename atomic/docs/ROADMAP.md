@@ -4,12 +4,12 @@
 - [x] Fork 8.9.1 + estrutura `atomic/`
 - [x] Conector Hermes ↔ Rocket.Chat com testes
 - [x] Stack de deploy (Caddy, Mongo, Rocket.Chat, Hermes) + backup
-- [ ] Criar repositório da empresa e subir o código
+- [x] Criar repositório da empresa e subir o código
 - [ ] Rodar o workflow de build e publicar a primeira imagem
 - [ ] Contratar VPS, DNS, primeiro deploy
 
 ## Fase 2 — Cara da Atomic (semana 2-3)
-- [ ] Logo, favicon, cores e tela de login (`atomic/branding/`)
+- [x] Logo, favicon, cores e tela de login (`atomic/branding/`)
 - [ ] Canais padrão (#geral, #alertas, #vendas, #produto, #board)
 - [ ] Login com Google Workspace (OAuth) para não ter senha separada
 - [ ] Apps desktop/mobile apontando para o domínio
