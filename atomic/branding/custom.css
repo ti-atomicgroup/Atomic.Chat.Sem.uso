@@ -1,0 +1,33 @@
+/*
+ * Atomic Chat — cores da marca sobre os tokens do Fuselage (design system do Rocket.Chat).
+ * Paleta tirada da identidade Atomic Group:
+ *   base       #000A15  (azul quase preto)
+ *   navy       #002244
+ *   azul       #0D5E94  (destaque)
+ *   azul claro #3A8DDE  (hover / links)
+ * Ajuste fino deve ser feito olhando a tela real: Administração → Layout → Custom CSS.
+ */
+
+:root {
+	/* Botões primários */
+	--rcx-color-button-background-primary-default: #0d5e94;
+	--rcx-color-button-background-primary-hover: #0b4f7d;
+	--rcx-color-button-background-primary-press: #093f64;
+	--rcx-color-button-background-primary-focus: #0d5e94;
+	--rcx-color-button-background-primary-keyfocus: #0d5e94;
+
+	/* Destaques, links e foco */
+	--rcx-color-stroke-highlight: #3a8dde;
+	--rcx-color-font-info: #0d5e94;
+	--rcx-color-status-font-on-info: #0d5e94;
+
+	/* Barra lateral */
+	--rcx-color-surface-sidebar: #000a15;
+	--rcx-color-surface-dark: #002244;
+}
+
+/* Tela de login: deixa o fundo da marca aparecer atrás do formulário */
+.rcx-css-login-background,
+[data-qa='login-page'] {
+	background-color: #000a15;
+}
