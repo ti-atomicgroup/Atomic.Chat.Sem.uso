@@ -54,7 +54,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: ShellCheck
-        run: shellcheck atomic/deploy/scripts/*.sh $(ls atomic/branding/*.sh 2>/dev/null)
+        run: shellcheck atomic/deploy/scripts/*.sh atomic/branding/*.sh
+
+      - name: actionlint (workflows da Atomic)
+        run: |
+          bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.7/scripts/download-actionlint.bash) 1.7.7
+          ./actionlint -color .github/workflows/atomic-*.yml
 
       - name: docker compose config
         working-directory: atomic/deploy
