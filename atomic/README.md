@@ -55,6 +55,10 @@ atomic/
     └── tests/                   testes do conector com Rocket.Chat simulado
 ```
 
+## Como contribuir
+
+Toda mudança vai em branch própria, testada, e entra na `atomic/main` só por PR: veja [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Rodar os testes do conector
 
 ```bash
