@@ -63,6 +63,7 @@ jobs:
 
       - name: Tag da imagem
         id: meta
+        # A tag "latest" só é movida pelo job smoke-test, depois que a imagem sobe com sucesso.
         run: |
           RC_VERSION=$(jq -r .version apps/meteor/package.json)
           if [[ "$GITHUB_REF" == refs/tags/atomic-v* ]]; then TAG="${GITHUB_REF#refs/tags/atomic-v}"; else TAG="${RC_VERSION}-atomic.${GITHUB_RUN_NUMBER}"; fi
@@ -84,6 +85,57 @@ jobs:
           target: release-standard
           platforms: linux/amd64
           push: true
-          tags: |
-            ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
-            ${{ env.IMAGE }}:latest
+          tags: ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+
+  smoke-test:
+    name: Teste de fumaça da imagem
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TAG: ${{ needs.build.outputs.tag }}
+    steps:
+      - name: MongoDB 8.2 (replica set)
+        run: |
+          docker network create smoke
+          docker run -d --name mongodb --network smoke mongo:8.2 --replSet rs0 --bind_ip_all
+          for _ in $(seq 1 30); do
+            docker exec mongodb mongosh --quiet --eval "rs.initiate({_id:'rs0',members:[{_id:0,host:'mongodb:27017'}]}).ok" && break
+            sleep 2
+          done
+
+      - name: Subir a imagem nova
+        run: |
+          docker run -d --name rocketchat --network smoke -p 3000:3000 \
+            -e MONGO_URL="mongodb://mongodb:27017/rocketchat?replicaSet=rs0" \
+            -e ROOT_URL=http://localhost:3000 \
+            -e OVERWRITE_SETTING_Show_Setup_Wizard=completed \
+            "$IMAGE:$TAG"
+
+      - name: Esperar o Rocket.Chat responder
+        run: |
+          for _ in $(seq 1 60); do
+            if INFO=$(curl -fsS http://localhost:3000/api/info 2>/dev/null); then
+              echo "$INFO" | jq .
+              echo "$INFO" | jq -e '.success == true' >/dev/null && exit 0
+            fi
+            sleep 5
+          done
+          echo "Rocket.Chat não respondeu em 5 minutos"
+          exit 1
+
+      - name: Logs em caso de falha
+        if: failure()
+        run: docker logs --tail 200 rocketchat || true
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Promover para latest
+        run: docker buildx imagetools create -t "$IMAGE:latest" "$IMAGE:$TAG"

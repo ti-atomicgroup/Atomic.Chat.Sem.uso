@@ -25,7 +25,7 @@ ssh root@IP_DA_VPS
 ```
 
 ```bash
-git clone https://github.com/<org>/atomic-chat.git /opt/atomic-chat && cd /opt/atomic-chat
+git clone https://github.com/ti-atomicgroup/Atomic.Chat.git /opt/atomic-chat && cd /opt/atomic-chat
 ```
 
 ```bash
@@ -36,7 +36,7 @@ No hPanel, confira se o firewall da Hostinger também libera 22, 80 e 443.
 
 ## 4. Configurar e subir o chat
 
-Edite `atomic/deploy/.env` (domínio, admin, tag da imagem). Se a imagem no GHCR for privada:
+Edite `atomic/deploy/.env` (domínio, admin, tag da imagem). A imagem `ghcr.io/ti-atomicgroup/atomic-chat` é pública e não precisa de login. Só se um dia ela virar privada:
 
 ```bash
 echo "<TOKEN_COM_read:packages>" | docker login ghcr.io -u <usuario-github> --password-stdin
